@@ -1,0 +1,23 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: jakes-rules
+spec:
+  validationFailureAction: enforce
+  background: false
+  rules:
+  - name: prevent-pod-deletion
+    match:
+      any:
+      - resources:
+          kinds:
+          - "Pod"
+    validate:
+      message: "Deleting {{request.oldObject.kind}}/{{request.oldObject.metadata.name}} is not allowed"
+      deny:
+        conditions:
+          any:
+          - key: "{{request.operation}}"
+            operator: Equals
+            value: DELETE

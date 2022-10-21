@@ -1,0 +1,23 @@
+#! /usr/bin/env bash
+
+resources="$(cat)"
+chart=$(echo "$resources" | yq e '.items.[] | select(.kind == "Promise") | .metadata.annotations.chart' )
+
+mkdir -p /tmp/chart/
+
+helm template $chart | yq . > /tmp/chart/chart.yaml
+
+~/workspace/kratix/hack/worker-resource-builder/worker-resource-builder -k8s-resources-directory /tmp/chart/ -promise promise.yaml > /tmp/promise.yaml
+
+cat /tmp/promise.yaml | yq -j . | jq -c . > /tmp/promise.json
+
+promise=$(cat /tmp/promise.json)
+echo "
+kind: ResourceList
+items: [ $promise ]
+"
+
+rm /tmp/promise.json
+rm /tmp/promise.yaml
+rm -rf /tmp/chart/
+
